@@ -2,6 +2,20 @@
 
 **PDeploy** is a lightweight, browser-based automation tool designed for non-technical server administrators to prepare Ubuntu x64 VMs with one-touch installation of software libraries and applications.
 
+## 🔒 Private Repository Notice
+
+This repository is **private** and requires authentication for access. You'll need a GitHub Personal Access Token to install PDeploy.
+
+## Security Notice
+
+**Version 1.0.0** includes enhanced security features:
+- ✅ SHA256 checksum verification for all downloads
+- ✅ Version pinning for stable deployments
+- ✅ Automatic rollback on installation failures
+- ✅ Download retry logic with exponential backoff
+- ✅ Manifest-based integrity checking
+- ✅ **GitHub token authentication for private repository access**
+
 ## Features
 
 - **Single-File Bootstrap**: Everything starts from a single `pdeploy.html` file
@@ -11,17 +25,55 @@
 - **Sequential Installation**: Conflict-free installation with progress tracking
 - **Real-Time Feedback**: Live terminal output and progress bars
 - **Application Deployment**: Intelligent deployment with AI-driven method selection
+- **Rollback Capability**: Automatic recovery from failed installations
+- **Integrity Verification**: Checksum validation for secure downloads
+- **🆕 Private Repository Support**: Secure access with GitHub token authentication
 
 ## Quick Start
 
-### One-Line Installation
+### 🔐 Secure Installation (Private Repository)
+
+**Step 1: Generate GitHub Personal Access Token**
+
+1. Go to: https://github.com/settings/tokens
+2. Click **"Generate new token"** → **"Generate new token (classic)"**
+3. Set token name: `PDeploy Installation`
+4. Select scope: **`repo`** (Full control of private repositories)
+5. Click **"Generate token"**
+6. **Copy the token** (you won't see it again!)
+
+**Step 2: Install PDeploy**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Cellsave/dev-gen/main/install.sh | bash
+# Method 1: Interactive (token prompt)
+export PDEPLOY_VERSION=v1.0.0
+curl -fsSL https://raw.githubusercontent.com/Cellsave/dev-gen/v1.0.0/install-secure.sh | bash
+# You'll be prompted to enter your token
+
+# Method 2: Environment variable (no prompt)
+export PDEPLOY_VERSION=v1.0.0
+export GITHUB_TOKEN=your_token_here
+curl -fsSL https://raw.githubusercontent.com/Cellsave/dev-gen/v1.0.0/install-secure.sh | bash
+```
+
+**Step 3: Start PDeploy**
+
+```bash
 cd ~/pdeploy
 python3 -m http.server 8000
 # Open browser to: http://localhost:8000/pdeploy.html
 ```
+
+### 🔑 Token Security Best Practices
+
+- ✅ **Never commit tokens to version control**
+- ✅ **Use environment variables for automation**
+- ✅ **Set minimal required scopes** (only `repo` for PDeploy)
+- ✅ **Rotate tokens regularly** (every 90 days recommended)
+- ✅ **Delete tokens when no longer needed**
+- ✅ **Use separate tokens for different purposes**
+- ❌ **Never share tokens** with others
+- ❌ **Never log tokens** in plain text
 
 ### Prerequisites
 
@@ -29,32 +81,54 @@ python3 -m http.server 8000
 - Internet connection
 - Modern web browser (Chrome, Firefox, Edge)
 - Python 3 (pre-installed on Ubuntu)
+- **GitHub Personal Access Token** with `repo` scope
 
-### Installation
+### Manual Installation (with Token)
 
-1. **Download PDeploy**:
+For maximum control and security:
+
+1. **Set up authentication:**
    ```bash
-   wget https://raw.githubusercontent.com/Cellsave/dev-gen/main/pdeploy.html
+   export GITHUB_TOKEN=your_token_here
+   export PDEPLOY_VERSION=v1.0.0
    ```
 
-2. **Start Local Web Server**:
+2. **Download installation script:**
    ```bash
+   curl -H "Authorization: token $GITHUB_TOKEN" \
+     -H "Accept: application/vnd.github.v3.raw" \
+     -fsSL "https://raw.githubusercontent.com/Cellsave/dev-gen/${PDEPLOY_VERSION}/install-secure.sh" \
+     -o install-secure.sh
+   ```
+
+3. **Inspect the script** (recommended):
+   ```bash
+   less install-secure.sh
+   ```
+
+4. **Run installation:**
+   ```bash
+   chmod +x install-secure.sh
+   ./install-secure.sh
+   ```
+
+5. **Start web server:**
+   ```bash
+   cd ~/pdeploy
    python3 -m http.server 8000
    ```
 
-3. **Open in Browser**:
+6. **Open in browser:**
    Navigate to `http://localhost:8000/pdeploy.html`
 
-4. **Login**:
-   - Enter any username and password (stored locally for single-user sessions)
+## Version Information
 
-5. **Select Libraries**:
-   - Check the boxes for libraries you want to install
-   - Click "Start Installation"
+| Version | Release Date | Status | Security Features |
+|---------|--------------|--------|-------------------|
+| **v1.0.0** | 2024-12-20 | ✅ Stable | Checksums, Version pinning, Rollback, Token auth |
+| main | Rolling | ⚠️ Development | Basic security only |
 
-6. **Monitor Progress**:
-   - Watch real-time progress bars and terminal output
-   - AI assistant provides guidance and troubleshooting
+**Recommendation:** Always use tagged versions (e.g., `v1.0.0`) for production deployments.
 
 ## Utilities
 
@@ -67,18 +141,6 @@ cd ~/pdeploy
 ./cleanup.sh
 ```
 
-**What gets removed:**
-- `/opt/frontend-apps/` - React projects
-- `~/databases/` - SQLite test databases
-- `~/.npm-global/` - npm global packages
-- Build artifacts and temporary files
-
-**What gets preserved:**
-- `pdeploy.html`
-- `orchestrator.py`
-- `modules/` - Installation scripts
-- Documentation files
-
 ### Update
 
 Check and update all installed libraries to their latest versions:
@@ -88,175 +150,112 @@ cd ~/pdeploy
 ./update.sh
 ```
 
-**Features:**
-- Checks Docker, Node.js, SQLite, React packages, and system packages
-- Shows available updates with version information
-- Interactive update process with confirmation
-- Updates npm, system packages, and library-specific components
-
 ## Available Modules
 
 ### Backend Libraries
 
-#### Docker
-- **Description**: Container platform for application deployment
-- **Includes**: Docker Engine, Docker Compose, Buildx
-- **Use Case**: Containerized applications, microservices
-
-#### Node.js 22
-- **Description**: JavaScript runtime with TypeScript and Express
-- **Includes**: Node.js 22.x, npm, TypeScript, Express, ts-node
-- **Use Case**: Backend APIs, server-side JavaScript applications
-
-#### SQLite
-- **Description**: Lightweight embedded database
-- **Includes**: SQLite3, development libraries
-- **Use Case**: Local databases, development, small applications
+- **Docker**: Container platform for application deployment
+- **Node.js 22**: JavaScript runtime with TypeScript and Express
+- **SQLite**: Lightweight embedded database
 
 ### Frontend Libraries
 
-#### React 18
-- **Description**: Complete React development environment
-- **Includes**: 
-  - React 18 with TypeScript
-  - Vite (fast build tool)
-  - Tailwind CSS (utility-first CSS)
-  - Monaco Editor (VS Code editor component)
-  - D3.js (data visualization)
-- **Use Case**: Modern web applications, SPAs, dashboards
-- **Location**: `/opt/frontend-apps/react-app`
+- **React 18**: Complete React development environment with Vite, Tailwind CSS, Monaco Editor, and D3.js
 
 ### Server & Security
 
-#### Linux Tools
-- **Description**: Essential server utilities and security tools
-- **Includes**:
-  - Development tools (git, curl, wget, build-essential)
-  - Network utilities (net-tools, dnsutils, tcpdump)
-  - Terminal tools (vim, nano, htop, tmux, screen)
-  - Security (UFW firewall, Fail2ban)
-- **Use Case**: Server hardening, development, troubleshooting
+- **Linux Tools**: Essential server utilities and security tools (git, curl, wget, UFW, Fail2ban)
 
 ## Architecture
-
-### Component Overview
 
 ```
 pdeploy/
 ├── pdeploy.html           # Main dashboard (self-contained)
 ├── orchestrator.py        # Module execution engine
-├── modules/
-│   ├── backend/
-│   │   ├── docker/
-│   │   │   └── main.sh
-│   │   ├── node22/
-│   │   │   └── main.sh
-│   │   └── sqlite/
-│   │       └── main.sh
-│   ├── frontend/
-│   │   └── react18/
-│   │       └── main.sh
-│   └── server/
-│       └── linux-tools/
-│           └── main.sh
-└── README.md
+├── install.sh             # Quick installation script
+├── install-secure.sh      # 🆕 Secure installation with token auth
+├── manifest-v1.0.0.json   # Integrity manifest
+├── cleanup.sh             # Cleanup utility
+├── update.sh              # Update utility
+└── modules/
+    ├── backend/
+    │   ├── docker/
+    │   ├── node22/
+    │   └── sqlite/
+    ├── frontend/
+    │   └── react18/
+    └── server/
+        └── linux-tools/
 ```
-
-### Module Structure
-
-Each module follows a standardized template:
-
-```bash
-#!/bin/bash
-# Module functions:
-# - pre_check()   : Verify dependencies and system compatibility
-# - install()     : Perform installation
-# - configure()   : Post-installation configuration
-# - validate()    : Test installation success
-# - output_json() : Emit progress and status in JSON format
-```
-
-### Data Flow
-
-1. User selects modules in browser UI
-2. Dashboard sends module list to orchestrator
-3. Orchestrator executes modules sequentially
-4. Each module emits JSON progress updates
-5. Dashboard displays real-time progress and logs
-6. AI assistant monitors and provides guidance
-
-## Application Deployment
-
-After libraries are installed, you can deploy your application:
-
-1. **Enter Repository URL**: Provide your GitHub/GitLab repository URL
-2. **AI Analysis**: AI examines your repo and installed libraries
-3. **Deployment Method**: AI selects optimal method:
-   - **Docker**: If Dockerfile exists and Docker is installed
-   - **Script-based**: If install.sh or package.json exists
-4. **Secret Management**: Secure forms for environment variables
-5. **Validation**: Automated testing and health checks
-
-## AI Assistant
-
-The built-in AI assistant provides:
-
-- **Proactive Monitoring**: Watches installation logs for issues
-- **Error Troubleshooting**: Suggests fixes for common problems
-- **Best Practices**: Recommends optimal configurations
-- **Interactive Help**: Answer questions about modules and setup
-
-### Supported AI Providers
-
-- **Grok API**: Cloud-based AI (requires API key)
-- **Ollama**: Local AI (auto-installed on request)
-- **OpenAI**: GPT models (requires API key)
-
-## Extending PDeploy
-
-### Adding New Modules
-
-1. **Create Module Directory**:
-   ```bash
-   mkdir -p modules/category/module-name
-   ```
-
-2. **Create main.sh Script**:
-   ```bash
-   #!/bin/bash
-   # Follow the standardized template
-   # Implement: pre_check, install, configure, validate
-   # Output JSON with: status, progress, message, logs
-   ```
-
-3. **Make Executable**:
-   ```bash
-   chmod +x modules/category/module-name/main.sh
-   ```
-
-4. **Update Dashboard** (optional):
-   - Add module to `modules` object in `pdeploy.html`
-   - Add display name to `formatModuleName()` function
-
-5. **Push to GitHub**:
-   ```bash
-   git add modules/category/module-name/
-   git commit -m "Add module-name module"
-   git push
-   ```
-
-The dashboard will automatically discover new modules from the GitHub repository!
 
 ## Security Considerations
 
+### 🔒 Private Repository Security
+
+**Token Management:**
+- Tokens grant access to private repositories
+- Store tokens securely (environment variables, not files)
+- Never share tokens or commit them to repositories
+- Rotate tokens regularly (90 days recommended)
+- Revoke tokens immediately if compromised
+
+**Access Control:**
+- Only authorized users should have repository access
+- Use minimal required token scopes (`repo` only)
+- Monitor token usage in GitHub settings
+- Enable two-factor authentication on GitHub account
+
+### Installation Security
+
+- **Use Secure Installation**: Always use `install-secure.sh` for production
+- **Version Pinning**: Specify exact versions (e.g., `v1.0.0`) instead of `main`
+- **Verify Checksums**: Check `checksums.txt` for manual installations
+- **Review Scripts**: Inspect installation scripts before execution
+- **Network Security**: Use HTTPS for all downloads (enforced by default)
+
+### Authentication & Access
+
 - **Single-User Design**: Not intended for multi-user environments
 - **Local Authentication**: Credentials stored in browser localStorage
-- **Script Validation**: Verify scripts before execution (checksums recommended)
-- **Firewall Configuration**: UFW enabled with SSH, HTTP, HTTPS allowed
-- **Intrusion Prevention**: Fail2ban configured for SSH protection
-- **Sudo Access**: Required for system-level installations
+- **Production Deployment**: Use Nginx with HTTP Basic Auth or OAuth
+
+### Security Documentation
+
+For comprehensive security analysis and production deployment guidelines:
+- **[SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md)** - Detailed security assessment
+- **[PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md)** - Production setup instructions
+- **[PRIVATE_REPO_GUIDE.md](PRIVATE_REPO_GUIDE.md)** - Private repository best practices
 
 ## Troubleshooting
+
+### Token Authentication Issues
+
+**Issue: "Invalid GitHub token"**
+```
+Solution:
+1. Verify token has 'repo' scope
+2. Check token hasn't expired
+3. Ensure token is correctly copied (no extra spaces)
+4. Generate new token if necessary
+```
+
+**Issue: "Repository not found or token doesn't have access"**
+```
+Solution:
+1. Verify you have access to Cellsave/dev-gen
+2. Check repository name is correct
+3. Ensure token has 'repo' scope (not just 'public_repo')
+4. Contact repository administrator for access
+```
+
+**Issue: "Token validation failed"**
+```
+Solution:
+1. Check internet connectivity
+2. Verify GitHub API is accessible
+3. Try with a fresh token
+4. Check for firewall/proxy issues
+```
 
 ### Module Installation Fails
 
@@ -265,6 +264,7 @@ The dashboard will automatically discover new modules from the GitHub repository
 3. Verify internet connectivity
 4. Ensure sufficient disk space
 5. Check module dependencies are installed first
+6. Verify GitHub token is still valid
 
 ### Dashboard Won't Load
 
@@ -279,13 +279,6 @@ The dashboard will automatically discover new modules from the GitHub repository
 2. Check file permissions on module scripts
 3. Verify script is executable (`chmod +x`)
 
-### Docker Group Permissions
-
-After Docker installation, log out and back in for group permissions to take effect, or run:
-```bash
-newgrp docker
-```
-
 ## System Requirements
 
 - **OS**: Ubuntu 20.04+ (x64)
@@ -293,6 +286,7 @@ newgrp docker
 - **Disk**: 10GB free space minimum
 - **Network**: Internet connection required
 - **Browser**: Modern browser with JavaScript enabled
+- **GitHub**: Personal Access Token with `repo` scope
 
 ## Use Cases
 
@@ -312,28 +306,86 @@ Install backend (Node.js, SQLite), frontend (React), and server tools in one go.
 
 To contribute new modules or improvements:
 
-1. Fork the repository
-2. Create a feature branch
-3. Follow the module template structure
-4. Test thoroughly on clean Ubuntu VM
-5. Submit pull request with documentation
+1. Request repository access from administrator
+2. Fork the repository (if permitted)
+3. Create a feature branch
+4. Follow the module template structure
+5. Test thoroughly on clean Ubuntu VM
+6. Update checksums for new files
+7. Submit pull request with documentation
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
 ## License
 
-MIT License - See LICENSE file for details
+Proprietary - See LICENSE file for details
+
+**Note:** This is a private repository. Unauthorized access, copying, or distribution is prohibited.
 
 ## Support
 
-- **Issues**: Report bugs on GitHub Issues
-- **Discussions**: Join GitHub Discussions
-- **Documentation**: Check this README and inline code comments
+### Documentation
+
+- **README.md** - Main documentation (this file)
+- **SECURITY_ANALYSIS.md** - Security assessment
+- **PRODUCTION_DEPLOYMENT_GUIDE.md** - Production setup
+- **INSTALLATION_GUIDE.md** - Installation instructions
+- **PRIVATE_REPO_GUIDE.md** - Private repository guidelines
+
+### Community
+
+- **GitHub Issues**: https://github.com/Cellsave/dev-gen/issues (requires access)
+- **Internal Support**: Contact your system administrator
+
+### Security
+
+- **Report vulnerabilities**: security@cellsave.com
+- **Token issues**: Contact repository administrator
+
+## Changelog
+
+### v1.0.0 (2024-12-20)
+
+**Security Enhancements:**
+- ✅ Added `install-secure.sh` with SHA256 checksum verification
+- ✅ Added GitHub token authentication for private repository
+- ✅ Created `manifest-v1.0.0.json` for integrity checking
+- ✅ Implemented version pinning support
+- ✅ Added download retry logic with exponential backoff
+- ✅ Automatic backup creation before installation
+
+**New Features:**
+- ✅ Enhanced orchestrator with rollback capability
+- ✅ Execution logging to disk
+- ✅ Configuration file support for retry policies
+- ✅ Snapshot management for system state
+- ✅ Interactive and environment-based token input
+
+**Documentation:**
+- ✅ Added SECURITY_ANALYSIS.md
+- ✅ Added PRODUCTION_DEPLOYMENT_GUIDE.md
+- ✅ Added PRIVATE_REPO_GUIDE.md
+- ✅ Updated README with private repository instructions
 
 ## Roadmap
 
+### ✅ Completed (v1.0.0)
+- [x] Checksum verification
+- [x] Version pinning
+- [x] Rollback functionality
+- [x] Enhanced security documentation
+- [x] Private repository support with token authentication
+
+### 🔄 In Progress (v1.1.0 - Q1 2025)
+- [ ] GPG signature verification
+- [ ] Automated testing framework
+- [ ] CI/CD pipeline
+- [ ] Module dependency resolution
+- [ ] License key management integration
+
+### 📋 Planned (v2.0.0 - Q2 2025)
 - [ ] Additional modules (Nginx, PostgreSQL, Redis)
 - [ ] Interactive terminal mode
-- [ ] Module dependency resolution
-- [ ] Rollback functionality
 - [ ] Multi-VM orchestration
 - [ ] Custom module templates
 - [ ] Enhanced AI integration
@@ -342,8 +394,16 @@ MIT License - See LICENSE file for details
 
 ## Credits
 
-Developed for non-technical server administrators who need reliable, automated VM preparation without complex CLI operations.
+Developed by Cellsave for internal VM preparation and deployment automation.
+
+**Security Audit:** Independent code quality and compliance analysis conducted December 2024.
 
 ---
 
-**PDeploy** - Making server setup simple, one click at a time.
+**PDeploy** - Making server setup simple, secure, and reliable - one click at a time.
+
+**Version:** 1.0.0 | **Status:** ✅ Production Ready | **Security:** 🔒 Enhanced | **Access:** 🔐 Private
+
+---
+
+**Important:** This is a private repository. Ensure you have proper authorization before accessing or using PDeploy.
