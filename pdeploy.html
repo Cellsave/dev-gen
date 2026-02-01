@@ -266,80 +266,135 @@
         async function runInstallations() {
             const progressSection = document.getElementById('progressSection');
             progressSection.innerHTML = '<h4>Installation Progress</h4>';
-
+            
+            // Create UI elements for all selected modules first
             for (const module of state.selectedModules) {
-                await installModule(module);
+                 createModuleUI(module);
             }
 
-            addAIMessage('All installations completed! You can now deploy your application.', 'ai');
+            try {
+                const response = await fetch('/api/install', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modules: state.selectedModules })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    
+                    // Process all complete lines
+                    buffer = lines.pop(); // Keep the last incomplete line
+                    
+                    for (const line of lines) {
+                        if (!line.trim()) continue;
+                        try {
+                            const event = JSON.parse(line);
+                            handleServerEvent(event);
+                        } catch (e) {
+                            console.error('Failed to parse event:', line);
+                            term.writeln(`Error parsing server event: ${e.message}`);
+                        }
+                    }
+                }
+                
+                addAIMessage('All installations completed! You can now deploy your application.', 'ai');
+
+            } catch (error) {
+                term.writeln(`Communication Error: ${error.message}`);
+                addAIMessage(`Communication error: ${error.message}`, 'ai');
+            }
         }
 
-        // Install individual module
-        async function installModule(moduleName) {
+        // Create UI for a module
+        function createModuleUI(moduleName) {
             const progressSection = document.getElementById('progressSection');
-            
             const moduleDiv = document.createElement('div');
             moduleDiv.className = 'module-group';
             moduleDiv.id = `module-${moduleName}`;
             moduleDiv.innerHTML = `
                 <div class="d-flex justify-content-between align-items-center">
                     <h6>${formatModuleName(moduleName)}</h6>
-                    <span class="status-badge badge bg-warning">Installing...</span>
+                    <span class="status-badge badge bg-secondary">Pending...</span>
                 </div>
                 <div class="progress mt-2">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    <div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%"></div>
                 </div>
                 <button class="btn btn-sm btn-link mt-2" onclick="toggleLogs('${moduleName}')">Show Details</button>
                 <div class="log-details" id="logs-${moduleName}"></div>
             `;
             progressSection.appendChild(moduleDiv);
-
-            term.writeln(`\n=== Installing ${formatModuleName(moduleName)} ===`);
-
-            try {
-                // Simulate installation with progress updates
-                await simulateInstallation(moduleName);
-                
-                // Update status
-                const badge = moduleDiv.querySelector('.status-badge');
-                badge.className = 'status-badge badge bg-success';
-                badge.textContent = 'Success';
-                
-                const progressBar = moduleDiv.querySelector('.progress-bar');
-                progressBar.style.width = '100%';
-                progressBar.classList.remove('progress-bar-animated');
-                
-                term.writeln(`✓ ${formatModuleName(moduleName)} installed successfully`);
-                addAIMessage(`${formatModuleName(moduleName)} installed successfully!`, 'ai');
-                
-            } catch (error) {
-                const badge = moduleDiv.querySelector('.status-badge');
-                badge.className = 'status-badge badge bg-danger';
-                badge.textContent = 'Failed';
-                
-                term.writeln(`✗ ${formatModuleName(moduleName)} installation failed: ${error.message}`);
-                addAIMessage(`Installation failed for ${formatModuleName(moduleName)}. Error: ${error.message}. Would you like me to suggest a fix?`, 'ai');
-            }
         }
 
-        // Simulate installation (in production, this would call actual scripts)
-        async function simulateInstallation(moduleName) {
-            const steps = ['pre_check', 'install', 'configure', 'validate'];
-            const progressBar = document.querySelector(`#module-${moduleName} .progress-bar`);
-            const logsDiv = document.getElementById(`logs-${moduleName}`);
-
-            for (let i = 0; i < steps.length; i++) {
-                const step = steps[i];
-                const progress = ((i + 1) / steps.length) * 100;
+        // Handle server events
+        function handleServerEvent(event) {
+            if (event.type === 'module_start') {
+                const moduleName = event.module;
+                const moduleDiv = document.getElementById(`module-${moduleName}`);
+                const badge = moduleDiv.querySelector('.status-badge');
+                const progressBar = moduleDiv.querySelector('.progress-bar');
                 
-                progressBar.style.width = `${progress}%`;
+                badge.className = 'status-badge badge bg-warning';
+                badge.textContent = 'Installing...';
+                progressBar.classList.add('progress-bar-animated');
                 
-                const logEntry = `[${new Date().toLocaleTimeString()}] ${step}: Processing...`;
-                logsDiv.innerHTML += `${logEntry}\n`;
-                term.writeln(`  ${logEntry}`);
+                term.writeln(`\n=== Installing ${formatModuleName(moduleName)} ===`);
                 
-                // Simulate step execution time
-                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+            } else if (event.type === 'progress') {
+                const moduleName = event.module;
+                const data = event.data;
+                const moduleDiv = document.getElementById(`module-${moduleName}`);
+                const progressBar = moduleDiv.querySelector('.progress-bar');
+                const logsDiv = document.getElementById(`logs-${moduleName}`);
+                
+                // Update progress bar
+                if (data.progress > 0) {
+                    progressBar.style.width = `${data.progress}%`;
+                }
+                
+                // Add logs
+                if (data.logs) {
+                    const logEntry = `[${new Date().toLocaleTimeString()}] ${data.logs}`;
+                    logsDiv.innerHTML += `${logEntry}\n`;
+                    logsDiv.scrollTop = logsDiv.scrollHeight;
+                    term.writeln(`  ${data.logs}`);
+                }
+                
+                // Update specific message if provided
+                if (data.message) {
+                     // Could update a status text here
+                }
+                
+                // Handle final status for this module
+                if (data.status === 'success' || data.status === 'error') {
+                    const badge = moduleDiv.querySelector('.status-badge');
+                    
+                    if (data.status === 'success') {
+                        badge.className = 'status-badge badge bg-success';
+                        badge.textContent = 'Success';
+                        progressBar.classList.remove('progress-bar-animated');
+                        progressBar.style.width = '100%';
+                        term.writeln(`✓ ${formatModuleName(moduleName)} installed successfully`);
+                        addAIMessage(`${formatModuleName(moduleName)} installed successfully!`, 'ai');
+                    } else {
+                        badge.className = 'status-badge badge bg-danger';
+                        badge.textContent = 'Failed';
+                        progressBar.classList.remove('progress-bar-animated');
+                        term.writeln(`✗ ${formatModuleName(moduleName)} installation failed: ${data.message}`);
+                        addAIMessage(`Installation failed for ${formatModuleName(moduleName)}. Error: ${data.message}`, 'ai');
+                    }
+                }
             }
         }
 

@@ -9,6 +9,7 @@ This repository is **private** and requires authentication for access. You'll ne
 ## Security Notice
 
 **Version 1.0.0** includes enhanced security features:
+
 - ✅ SHA256 checksum verification for all downloads
 - ✅ Version pinning for stable deployments
 - ✅ Automatic rollback on installation failures
@@ -35,7 +36,7 @@ This repository is **private** and requires authentication for access. You'll ne
 
 **Step 1: Generate GitHub Personal Access Token**
 
-1. Go to: https://github.com/settings/tokens
+1. Go to: <https://github.com/settings/tokens>
 2. Click **"Generate new token"** → **"Generate new token (classic)"**
 3. Set token name: `PDeploy Installation`
 4. Select scope: **`repo`** (Full control of private repositories)
@@ -60,7 +61,10 @@ curl -fsSL https://raw.githubusercontent.com/Cellsave/dev-gen/v1.0.0/install-sec
 
 ```bash
 cd ~/pdeploy
-python3 -m http.server 8000
+# Install dependencies
+pip3 install -r requirements.txt
+# Start the backend server
+python3 server.py
 # Open browser to: http://localhost:8000/pdeploy.html
 ```
 
@@ -88,12 +92,14 @@ python3 -m http.server 8000
 For maximum control and security:
 
 1. **Set up authentication:**
+
    ```bash
    export GITHUB_TOKEN=your_token_here
    export PDEPLOY_VERSION=v1.0.0
    ```
 
 2. **Download installation script:**
+
    ```bash
    curl -H "Authorization: token $GITHUB_TOKEN" \
      -H "Accept: application/vnd.github.v3.raw" \
@@ -102,20 +108,24 @@ For maximum control and security:
    ```
 
 3. **Inspect the script** (recommended):
+
    ```bash
    less install-secure.sh
    ```
 
 4. **Run installation:**
+
    ```bash
    chmod +x install-secure.sh
    ./install-secure.sh
    ```
 
 5. **Start web server:**
+
    ```bash
    cd ~/pdeploy
-   python3 -m http.server 8000
+   pip3 install -r requirements.txt
+   python3 server.py
    ```
 
 6. **Open in browser:**
@@ -193,6 +203,7 @@ pdeploy/
 ### 🔒 Private Repository Security
 
 **Token Management:**
+
 - Tokens grant access to private repositories
 - Store tokens securely (environment variables, not files)
 - Never share tokens or commit them to repositories
@@ -200,6 +211,7 @@ pdeploy/
 - Revoke tokens immediately if compromised
 
 **Access Control:**
+
 - Only authorized users should have repository access
 - Use minimal required token scopes (`repo` only)
 - Monitor token usage in GitHub settings
@@ -222,6 +234,7 @@ pdeploy/
 ### Security Documentation
 
 For comprehensive security analysis and production deployment guidelines:
+
 - **[SECURITY_ANALYSIS.md](SECURITY_ANALYSIS.md)** - Detailed security assessment
 - **[PRODUCTION_DEPLOYMENT_GUIDE.md](PRODUCTION_DEPLOYMENT_GUIDE.md)** - Production setup instructions
 - **[PRIVATE_REPO_GUIDE.md](PRIVATE_REPO_GUIDE.md)** - Private repository best practices
@@ -231,6 +244,7 @@ For comprehensive security analysis and production deployment guidelines:
 ### Token Authentication Issues
 
 **Issue: "Invalid GitHub token"**
+
 ```
 Solution:
 1. Verify token has 'repo' scope
@@ -240,6 +254,7 @@ Solution:
 ```
 
 **Issue: "Repository not found or token doesn't have access"**
+
 ```
 Solution:
 1. Verify you have access to Cellsave/dev-gen
@@ -249,6 +264,7 @@ Solution:
 ```
 
 **Issue: "Token validation failed"**
+
 ```
 Solution:
 1. Check internet connectivity
@@ -291,15 +307,19 @@ Solution:
 ## Use Cases
 
 ### Development Environment Setup
+
 Install Node.js, React, and development tools for web development.
 
 ### Container Platform
+
 Set up Docker for containerized application deployment.
 
 ### Secure Server
+
 Install Linux tools with firewall and intrusion prevention.
 
 ### Full Stack Environment
+
 Install backend (Node.js, SQLite), frontend (React), and server tools in one go.
 
 ## Contributing
@@ -334,12 +354,12 @@ Proprietary - See LICENSE file for details
 
 ### Community
 
-- **GitHub Issues**: https://github.com/Cellsave/dev-gen/issues (requires access)
+- **GitHub Issues**: <https://github.com/Cellsave/dev-gen/issues> (requires access)
 - **Internal Support**: Contact your system administrator
 
 ### Security
 
-- **Report vulnerabilities**: security@cellsave.com
+- **Report vulnerabilities**: <security@cellsave.com>
 - **Token issues**: Contact repository administrator
 
 ## Changelog
@@ -347,6 +367,7 @@ Proprietary - See LICENSE file for details
 ### v1.0.0 (2024-12-20)
 
 **Security Enhancements:**
+
 - ✅ Added `install-secure.sh` with SHA256 checksum verification
 - ✅ Added GitHub token authentication for private repository
 - ✅ Created `manifest-v1.0.0.json` for integrity checking
@@ -355,6 +376,7 @@ Proprietary - See LICENSE file for details
 - ✅ Automatic backup creation before installation
 
 **New Features:**
+
 - ✅ Enhanced orchestrator with rollback capability
 - ✅ Execution logging to disk
 - ✅ Configuration file support for retry policies
@@ -362,6 +384,7 @@ Proprietary - See LICENSE file for details
 - ✅ Interactive and environment-based token input
 
 **Documentation:**
+
 - ✅ Added SECURITY_ANALYSIS.md
 - ✅ Added PRODUCTION_DEPLOYMENT_GUIDE.md
 - ✅ Added PRIVATE_REPO_GUIDE.md
@@ -370,6 +393,7 @@ Proprietary - See LICENSE file for details
 ## Roadmap
 
 ### ✅ Completed (v1.0.0)
+
 - [x] Checksum verification
 - [x] Version pinning
 - [x] Rollback functionality
@@ -377,6 +401,7 @@ Proprietary - See LICENSE file for details
 - [x] Private repository support with token authentication
 
 ### 🔄 In Progress (v1.1.0 - Q1 2025)
+
 - [ ] GPG signature verification
 - [ ] Automated testing framework
 - [ ] CI/CD pipeline
@@ -384,6 +409,7 @@ Proprietary - See LICENSE file for details
 - [ ] License key management integration
 
 ### 📋 Planned (v2.0.0 - Q2 2025)
+
 - [ ] Additional modules (Nginx, PostgreSQL, Redis)
 - [ ] Interactive terminal mode
 - [ ] Multi-VM orchestration

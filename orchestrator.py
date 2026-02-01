@@ -30,51 +30,92 @@ class ModuleOrchestrator:
     
     def execute_module(self, module_name: str) -> Dict:
         """Execute a single module and return results"""
+        # For backward compatibility, collect all streamed output and return final result
+        last_result = None
+        for result in self.execute_module_stream(module_name):
+            last_result = result
+            
+        if last_result:
+            return last_result
+            
+        return {
+            "module": module_name,
+            "status": "error",
+            "progress": 0,
+            "message": "Module execution produced no output",
+            "logs": ""
+        }
+
+    def execute_module_stream(self, module_name: str):
+        """Execute module and yield output lines"""
         module_path = self.get_module_path(module_name)
         
         if not module_path:
-            return {
+            yield {
                 "module": module_name,
                 "status": "error",
                 "progress": 0,
                 "message": "Module not found",
                 "logs": f"Could not find module script for {module_name}"
             }
+            return
         
         try:
-            # Execute the module script
-            result = subprocess.run(
+            # Execute the module script using Popen for streaming
+            process = subprocess.Popen(
                 [str(module_path)],
-                capture_output=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=600  # 10 minute timeout
+                bufsize=1,  # Line buffered
+                cwd=str(self.base_path)
             )
             
-            # Try to parse JSON output
-            try:
-                output = json.loads(result.stdout.strip().split('\n')[-1])
-                output["module"] = module_name
-                return output
-            except json.JSONDecodeError:
-                # If JSON parsing fails, return raw output
-                return {
+            # Read stdout line by line
+            for line in process.stdout:
+                line = line.strip()
+                if not line:
+                    continue
+                    
+                try:
+                    # Try to parse JSON lines from the script
+                    data = json.loads(line)
+                    data["module"] = module_name
+                    yield data
+                except json.JSONDecodeError:
+                    # Yield raw text as logs
+                    yield {
+                        "module": module_name,
+                        "status": "running", 
+                        "progress": 0,  # Unknown progress
+                        "message": "Log output",
+                        "logs": line
+                    }
+            
+            process.wait()
+            
+            # Check stderr for any error output that wasn't captured
+            stderr_output = process.stderr.read()
+            if stderr_output:
+                 yield {
                     "module": module_name,
-                    "status": "error" if result.returncode != 0 else "success",
-                    "progress": 100 if result.returncode == 0 else 0,
-                    "message": "Execution completed" if result.returncode == 0 else "Execution failed",
-                    "logs": result.stdout + "\n" + result.stderr
+                    "status": "warning", 
+                    "progress": 0,
+                    "message": "Stderr output",
+                    "logs": stderr_output
+                }
+
+            if process.returncode != 0:
+                 yield {
+                    "module": module_name,
+                    "status": "error",
+                    "progress": 0,
+                    "message": f"Process failed with code {process.returncode}",
+                    "logs": ""
                 }
                 
-        except subprocess.TimeoutExpired:
-            return {
-                "module": module_name,
-                "status": "error",
-                "progress": 0,
-                "message": "Module execution timed out",
-                "logs": "Execution exceeded 10 minute timeout"
-            }
         except Exception as e:
-            return {
+            yield {
                 "module": module_name,
                 "status": "error",
                 "progress": 0,
