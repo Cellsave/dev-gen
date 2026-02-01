@@ -22,7 +22,7 @@ class ModuleOrchestrator:
     def get_module_path(self, module_name: str) -> Optional[Path]:
         """Find the module script path"""
         # Search in backend, frontend, and server directories
-        for category in ['backend', 'frontend', 'server']:
+        for category in ['backend', 'frontend', 'server', 'monitoring']:
             module_path = self.modules_path / category / module_name / "main.sh"
             if module_path.exists():
                 return module_path

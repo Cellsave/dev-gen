@@ -5,6 +5,7 @@ import json
 import os
 import sys
 from orchestrator import ModuleOrchestrator
+from audit import audit_requirements
 
 app = Flask(__name__)
 # Enable CORS to allow the frontend to communicate with the backend
@@ -16,6 +17,14 @@ def health_check():
     """Simple health check endpoint"""
     return jsonify({"status": "ok", "service": "pdeploy-backend"})
 
+@app.route('/api/audit', methods=['POST'])
+def audit_system():
+    """Check system requirements for selected modules"""
+    data = request.json
+    modules = data.get('modules', [])
+    result = audit_requirements(modules)
+    return jsonify(result)
+
 @app.route('/api/modules', methods=['GET'])
 def list_modules():
     """List available modules from filesystem"""
@@ -23,7 +32,7 @@ def list_modules():
         # Use orchestrator to find modules
         orchestrator = ModuleOrchestrator()
         modules = {}
-        for category in ['backend', 'frontend', 'server']:
+        for category in ['backend', 'frontend', 'server', 'monitoring']:
             cat_path = orchestrator.modules_path / category
             if cat_path.exists():
                 modules[category] = [

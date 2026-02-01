@@ -29,6 +29,8 @@ This repository is **private** and requires authentication for access. You'll ne
 - **Rollback Capability**: Automatic recovery from failed installations
 - **Integrity Verification**: Checksum validation for secure downloads
 - **🆕 Private Repository Support**: Secure access with GitHub token authentication
+- **🆕 Monitoring Stack**: Integrated ELK, Prometheus, and Grafana installation
+- **🆕 System Audit**: Dynamic resource validation before deployment
 
 ## Quick Start
 
@@ -176,12 +178,24 @@ cd ~/pdeploy
 
 - **Linux Tools**: Essential server utilities and security tools (git, curl, wget, UFW, Fail2ban)
 
+### Monitoring Stack (New)
+
+- **Filebeat**: Lightweight log shipper
+- **Logstash**: Server-side data processing pipeline
+- **Elasticsearch**: Search and analytics engine (Requires ~2GB RAM)
+- **Kibana**: Window into the Elastic Stack
+- **Prometheus**: Monitoring system and time series database
+- **Grafana**: Observability and data visualization
+
 ## Architecture
 
 ```
 pdeploy/
 ├── pdeploy.html           # Main dashboard (self-contained)
+├── server.py              # Flask backend server
 ├── orchestrator.py        # Module execution engine
+├── audit.py               # 🆕 System resource auditor
+├── requirements.txt       # Python dependencies
 ├── install.sh             # Quick installation script
 ├── install-secure.sh      # 🆕 Secure installation with token auth
 ├── manifest-v1.0.0.json   # Integrity manifest
@@ -194,6 +208,13 @@ pdeploy/
     │   └── sqlite/
     ├── frontend/
     │   └── react18/
+    ├── monitoring/        # 🆕 ELK & Prometheus Stack
+    │   ├── filebeat/
+    │   ├── logstash/
+    │   ├── elasticsearch/
+    │   ├── kibana/
+    │   ├── prometheus/
+    │   └── grafana/
     └── server/
         └── linux-tools/
 ```

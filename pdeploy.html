@@ -1,275 +1,464 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDeploy - VM Preparation Dashboard</title>
+    <title>PDeploy // SysAdmin Console</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+    <!-- Google Fonts: JetBrains Mono for that dev feel -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f8f9fa; }
-        .login-container { max-width: 400px; margin: 100px auto; padding: 30px; background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .dashboard-container { display: none; padding: 20px; }
-        .sidebar { position: fixed; right: 0; top: 0; width: 350px; height: 100vh; background: white; border-left: 2px solid #dee2e6; padding: 20px; overflow-y: auto; }
-        .main-content { margin-right: 370px; }
-        .module-group { margin-bottom: 25px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .module-checkbox { margin: 8px 0; }
-        .progress-container { margin: 10px 0; display: none; }
-        .log-details { display: none; margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px; font-family: monospace; font-size: 12px; max-height: 200px; overflow-y: auto; }
-        .terminal-container { margin-top: 20px; background: #1e1e1e; padding: 15px; border-radius: 8px; }
-        .ai-chat { height: calc(100vh - 200px); display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 5px; padding: 10px; margin-bottom: 10px; background: #f8f9fa; }
-        .chat-message { margin: 8px 0; padding: 8px; border-radius: 5px; }
-        .chat-user { background: #007bff; color: white; text-align: right; }
-        .chat-ai { background: #e9ecef; }
-        .status-badge { font-size: 12px; margin-left: 10px; }
-        .app-deploy-section { margin-top: 30px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .secret-form { margin-top: 15px; }
-        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --text-primary: #c9d1d9;
+            --text-secondary: #8b949e;
+            --accent-green: #238636;
+            --accent-blue: #58a6ff;
+            --accent-red: #da3633;
+            --terminal-bg: #010409;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--bg-color);
+            color: var(--text-primary);
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+        }
+
+        .card-header {
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.9rem;
+            letter-spacing: 1px;
+        }
+
+        .form-control,
+        .form-select {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .form-control:focus {
+            background: var(--bg-color);
+            border-color: var(--accent-blue);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-primary {
+            background: var(--accent-green);
+            border: 1px solid rgba(240, 246, 252, 0.1);
+            color: #fff;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:active {
+            background: #2ea043;
+            border-color: rgba(240, 246, 252, 0.1);
+        }
+
+        .btn-outline-secondary {
+            border-color: var(--border-color);
+            color: var(--text-secondary);
+        }
+
+        .module-checkbox {
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .module-checkbox:hover {
+            border-color: var(--accent-blue);
+            background: rgba(88, 166, 255, 0.1);
+        }
+
+        .terminal-container {
+            border: 1px solid var(--border-color);
+            padding: 5px;
+            background: var(--terminal-bg);
+            border-radius: 6px;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
+        .log-details {
+            background: #000;
+            color: #aaa;
+            font-size: 0.8rem;
+            padding: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            border-top: 1px solid #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Audit Panel */
+        .audit-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px dashed var(--border-color);
+        }
+
+        .audit-pass {
+            color: var(--accent-green);
+        }
+
+        .audit-fail {
+            color: var(--accent-red);
+        }
+
+        /* Chat */
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            background: var(--terminal-bg);
+            border: 1px solid var(--border-color);
+            padding: 15px;
+        }
+
+        .chat-message {
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
+        .chat-user {
+            background: #1f6feb;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            width: fit-content;
+        }
+
+        .chat-ai {
+            background: #238636;
+            color: white;
+            align-self: flex-start;
+            margin-right: auto;
+            width: fit-content;
+            border: 1px solid #2ea043;
+        }
     </style>
 </head>
+
 <body>
-    <!-- Login Screen -->
-    <div id="loginScreen" class="login-container">
-        <h2 class="text-center mb-4">PDeploy Login</h2>
-        <form id="loginForm">
-            <div class="mb-3">
-                <label class="form-label">Username</label>
-                <input type="text" class="form-control" id="username" required>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Password</label>
-                <input type="password" class="form-control" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Login</button>
-        </form>
+
+    <!-- Auth Screen -->
+    <div id="loginScreen" class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4 shadow-lg" style="width: 400px; border-top: 4px solid var(--accent-green);">
+            <h3 class="text-center mb-4">> AUTHENTICATE_</h3>
+            <form id="loginForm">
+                <div class="mb-3">
+                    <label class="form-label text-muted">USER_ID</label>
+                    <input type="text" class="form-control" id="username" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label text-muted">ACCESS_KEY</label>
+                    <input type="password" class="form-control" id="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">INITIALIZE SESSION</button>
+            </form>
+        </div>
     </div>
 
-    <!-- Dashboard -->
-    <div id="dashboard" class="dashboard-container">
-        <div class="main-content">
-            <div class="header">
-                <h1>PDeploy - VM Preparation Dashboard</h1>
-                <p class="mb-0">Automated Ubuntu x64 Server Setup</p>
+    <!-- Main Dashboard -->
+    <div id="dashboard" class="container-fluid py-4" style="display: none;">
+        <header class="d-flex justify-content-between align-items-center mb-4 border-bottom border-dark pb-3">
+            <h3 class="m-0"><span class="text-secondary">./</span>PDEPLOY_CONSOLE <span class="badge bg-danger ms-2"
+                    style="font-size: 0.6em">v1.0.1</span></h3>
+            <div class="text-end">
+                <div class="text-muted small">SYSTEM_TIME: <span id="clock" class="text-white"></span></div>
+                <div class="text-muted small">USER: <span id="displayUser" class="text-accent-blue">ADMIN</span></div>
             </div>
+        </header>
 
-            <!-- Library Selection -->
-            <div id="librarySelection">
-                <h3>Select Libraries to Install</h3>
-                
-                <div class="module-group">
-                    <h5>Backend Libraries</h5>
-                    <div id="backendModules"></div>
-                </div>
+        <div class="row g-4">
+            <!-- Left Column: Configuration -->
+            <div class="col-lg-4">
+                <div class="card mb-4">
+                    <div class="card-header">> SYSTEM_CONFIGURATION</div>
+                    <div class="card-body">
 
-                <div class="module-group">
-                    <h5>Frontend Libraries</h5>
-                    <div id="frontendModules"></div>
-                </div>
+                        <h6 class="text-secondary small mt-2 mb-3"># BACKEND_MODULES</h6>
+                        <div id="backendModules"></div>
 
-                <div class="module-group">
-                    <h5>Server & Security</h5>
-                    <div id="serverModules"></div>
-                </div>
+                        <h6 class="text-secondary small mt-3 mb-3"># FRONTEND_MODULES</h6>
+                        <div id="frontendModules"></div>
 
-                <button id="goButton" class="btn btn-success btn-lg mt-3">
-                    <span id="goButtonText">Start Installation</span>
-                    <span id="goButtonSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
-                </button>
-            </div>
+                        <h6 class="text-secondary small mt-3 mb-3"># MONITORING_STACK <span
+                                class="badge bg-warning text-dark">NEW</span></h6>
+                        <div id="monitoringModules"></div>
 
-            <!-- Progress Section -->
-            <div id="progressSection" class="mt-4"></div>
+                        <h6 class="text-secondary small mt-3 mb-3"># SERVER_UTILS</h6>
+                        <div id="serverModules"></div>
 
-            <!-- App Deployment -->
-            <div class="app-deploy-section">
-                <h3>Application Deployment</h3>
-                <p class="text-muted">Deploy your application after libraries are installed</p>
-                <div class="mb-3">
-                    <label class="form-label">Repository URL</label>
-                    <input type="text" class="form-control" id="repoUrl" placeholder="https://github.com/username/repo">
-                </div>
-                <button id="deployButton" class="btn btn-primary">Deploy Application</button>
-                <div id="deployProgress" class="mt-3"></div>
-            </div>
+                        <hr class="border-secondary">
 
-            <!-- Terminal -->
-            <div class="terminal-container">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <h5 class="text-white mb-0">Terminal Output</h5>
-                    <div class="form-check form-switch">
-                        <input class="form-check-input" type="checkbox" id="terminalInteractive">
-                        <label class="form-check-label text-white" for="terminalInteractive">Interactive Mode</label>
+                        <!-- Audit Section -->
+                        <div id="auditSection" class="mb-3 p-2 border border-secondary rounded bg-dark">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small fw-bold text-uppercase">Pre-Flight Check</span>
+                                <span id="auditStatus" class="badge bg-secondary">PENDING</span>
+                            </div>
+                            <div id="auditDetails" class="small text-muted" style="font-size: 0.75rem;">
+                                Select modules to calculate requirements...
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button id="goButton" class="btn btn-primary btn-lg rounded-0">
+                                <span id="goButtonSpinner" class="spinner-border spinner-border-sm me-2"
+                                    style="display:none"></span>
+                                <span id="goButtonText">RUN_INSTALLATION()</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <div id="terminal"></div>
-            </div>
-        </div>
 
-        <!-- AI Chat Sidebar -->
-        <div class="sidebar">
-            <h4>AI Assistant</h4>
-            <div class="mb-3">
-                <label class="form-label">AI Provider</label>
-                <select class="form-select" id="aiProvider">
-                    <option value="grok">Grok API</option>
-                    <option value="ollama">Ollama (Local)</option>
-                    <option value="openai">OpenAI</option>
-                </select>
+                <div class="card">
+                    <div class="card-header">> AI_ASSISTANT</div>
+                    <div class="card-body">
+                        <div id="chatMessages" class="chat-container mb-3 rounded"></div>
+                        <div class="input-group">
+                            <input type="text" id="chatInput" class="form-control"
+                                placeholder="Enter command or query...">
+                            <button class="btn btn-outline-secondary" id="sendChatButton">SEND</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="ai-chat">
-                <div class="chat-messages" id="chatMessages"></div>
-                <div>
-                    <textarea class="form-control mb-2" id="chatInput" rows="3" placeholder="Ask AI for help..."></textarea>
-                    <button class="btn btn-primary w-100" id="sendChatButton">Send</button>
+
+            <!-- Right Column: Terminal & Output -->
+            <div class="col-lg-8">
+                <div class="card mb-4 h-100">
+                    <div class="card-header d-flex justify-content-between">
+                        <span>> LIVE_TERMINAL_OUTPUT</span>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="terminalInteractive">
+                            <label class="form-check-label small" for="terminalInteractive">INTERACTIVE_MODE</label>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="terminal" class="terminal-container" style="height: 500px;"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">> INSTALLATION_STATUS</div>
+                    <div class="card-body" id="progressSection">
+                        <div class="text-center text-secondary py-5">
+                            NO_ACTIVE_PROCESS
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
     <script>
-        // Global state
+        // State management
         const state = {
             selectedModules: [],
-            installationLogs: {},
-            repoTree: null,
+            repoTree: [],
             aiContext: []
         };
 
-        const GITHUB_REPO = 'Cellsave/dev-gen';
-        const GITHUB_API = `https://api.github.com/repos/${GITHUB_REPO}/git/trees/main?recursive=1`;
+        // Clock
+        setInterval(() => {
+            document.getElementById('clock').textContent = new Date().toISOString();
+        }, 1000);
 
         // Terminal setup
         const term = new Terminal({
             cursorBlink: true,
-            theme: { background: '#1e1e1e' },
-            rows: 20
+            theme: { background: '#010409', foreground: '#c9d1d9', cursor: '#00ff00' },
+            fontFamily: 'JetBrains Mono, monospace',
+            fontSize: 12
         });
 
         // Login handling
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            // Simple local auth (stored in localStorage)
             localStorage.setItem('pdeploy_user', username);
-            localStorage.setItem('pdeploy_auth', btoa(`${username}:${password}`));
-            
             document.getElementById('loginScreen').style.display = 'none';
             document.getElementById('dashboard').style.display = 'block';
-            
+            document.getElementById('displayUser').textContent = username.toUpperCase();
             initDashboard();
         });
 
         // Initialize dashboard
         async function initDashboard() {
             term.open(document.getElementById('terminal'));
-            term.writeln('PDeploy Terminal - Ready');
+            term.writeln('\x1b[32m[SYSTEM] PDeploy Console Initialized\x1b[0m');
+            term.writeln('[SYSTEM] Connected to orchestrator...');
             term.writeln('');
 
-            // Load cached repo tree or fetch new
-            const cached = localStorage.getItem('pdeploy_repo_tree');
-            if (cached) {
-                state.repoTree = JSON.parse(cached);
-                renderModules();
-            }
-
-            await fetchRepoTree();
-            addAIMessage('Hello! I\'m your AI assistant. I\'ll monitor installations and help troubleshoot issues.', 'ai');
+            await fetchModules();
+            addAIMessage('System ready. Please select modules for deployment check.', 'ai');
         }
 
-        // Fetch GitHub repo tree
-        async function fetchRepoTree() {
+        // Fetch modules from Backend
+        async function fetchModules() {
             try {
-                term.writeln('Fetching module list from GitHub...');
-                const response = await fetch(GITHUB_API);
+                term.writeln('[NET] GET /api/modules...');
+                const response = await fetch('/api/modules');
                 const data = await response.json();
-                
-                state.repoTree = data.tree.filter(item => 
-                    item.type === 'tree' && 
-                    (item.path.startsWith('modules/') || item.path.includes('docker') || item.path.includes('node'))
-                );
-                
-                localStorage.setItem('pdeploy_repo_tree', JSON.stringify(state.repoTree));
-                renderModules();
-                term.writeln('Module list updated successfully');
+
+                renderModuleList(data.backend || [], 'backendModules');
+                renderModuleList(data.frontend || [], 'frontendModules');
+                renderModuleList(data.server || [], 'serverModules');
+                renderModuleList(data.monitoring || [], 'monitoringModules');
+
+                term.writeln('[NET] Modules loaded successfully');
             } catch (error) {
-                term.writeln(`Error fetching modules: ${error.message}`);
-                addAIMessage('Failed to fetch modules from GitHub. Using cached version if available.', 'ai');
+                term.writeln(`\x1b[31m[ERROR] Failed to fetch modules: ${error.message}\x1b[0m`);
             }
         }
 
-        // Render module checkboxes
-        function renderModules() {
-            const modules = {
-                backend: ['docker', 'node22', 'sqlite'],
-                frontend: ['react18'],
-                server: ['linux-tools']
-            };
+        function renderModuleList(modules, containerId) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
 
-            Object.keys(modules).forEach(category => {
-                const container = document.getElementById(`${category}Modules`);
-                container.innerHTML = '';
-                
-                modules[category].forEach(module => {
-                    const div = document.createElement('div');
-                    div.className = 'module-checkbox form-check';
-                    div.innerHTML = `
-                        <input class="form-check-input" type="checkbox" value="${module}" id="${module}">
-                        <label class="form-check-label" for="${module}">
-                            ${formatModuleName(module)}
-                        </label>
-                    `;
-                    container.appendChild(div);
-                });
+            modules.forEach(moduleName => {
+                const div = document.createElement('div');
+                div.className = 'module-checkbox form-check';
+                div.onclick = (e) => {
+                    if (e.target.tagName !== 'INPUT') {
+                        const checkbox = div.querySelector('input');
+                        checkbox.checked = !checkbox.checked;
+                        toggleModule(moduleName, checkbox.checked);
+                    }
+                };
+
+                div.innerHTML = `
+                    <input class="form-check-input" type="checkbox" value="${moduleName}" id="mod_${moduleName}" onchange="toggleModule('${moduleName}', this.checked)">
+                    <label class="form-check-label" for="mod_${moduleName}">
+                        ${moduleName.toUpperCase()}
+                    </label>
+                `;
+                container.appendChild(div);
             });
         }
 
-        // Format module name for display
-        function formatModuleName(name) {
-            const names = {
-                'docker': 'Docker',
-                'node22': 'Node.js 22 (with Express, TypeScript)',
-                'sqlite': 'SQLite',
-                'react18': 'React 18 (with TS, Vite, Tailwind, Monaco, D3)',
-                'linux-tools': 'Linux Tools (Essential packages)'
-            };
-            return names[name] || name;
+        function toggleModule(moduleName, isChecked) {
+            if (isChecked) {
+                if (!state.selectedModules.includes(moduleName)) state.selectedModules.push(moduleName);
+            } else {
+                state.selectedModules = state.selectedModules.filter(m => m !== moduleName);
+            }
+            runAudit();
         }
 
-        // Start installation
-        document.getElementById('goButton').addEventListener('click', async () => {
-            const checkboxes = document.querySelectorAll('.module-checkbox input:checked');
-            state.selectedModules = Array.from(checkboxes).map(cb => cb.value);
+        // Audit System
+        async function runAudit() {
+            const auditStatus = document.getElementById('auditStatus');
+            const auditDetails = document.getElementById('auditDetails');
+            const goButton = document.getElementById('goButton');
 
             if (state.selectedModules.length === 0) {
-                alert('Please select at least one module to install');
+                auditStatus.className = 'badge bg-secondary';
+                auditStatus.textContent = 'PENDING';
+                auditDetails.textContent = 'Select modules to calculate requirements...';
+                goButton.disabled = false; // Allow click to prompt user
                 return;
             }
 
-            document.getElementById('goButtonText').textContent = 'Installing...';
+            auditStatus.textContent = 'CHECKING...';
+            auditStatus.className = 'badge bg-warning text-dark';
+
+            try {
+                const response = await fetch('/api/audit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ modules: state.selectedModules })
+                });
+                const result = await response.json();
+
+                // Render Details
+                let detailsHtml = '<div class="mt-2">';
+
+                // RAM Check
+                const ramClass = result.checks.ram.pass ? 'audit-pass' : 'audit-fail';
+                detailsHtml += `<div class="audit-item"><span class="${ramClass}">RAM_REQ: ${result.checks.ram.needed}MB / ${result.checks.ram.available}MB</span> <span>[${result.checks.ram.pass ? 'OK' : 'FAIL'}]</span></div>`;
+
+                // Disk Check
+                const diskClass = result.checks.disk.pass ? 'audit-pass' : 'audit-fail';
+                detailsHtml += `<div class="audit-item"><span class="${diskClass}">DISK_REQ: ${result.checks.disk.needed}MB / ${result.checks.disk.available}MB</span> <span>[${result.checks.disk.pass ? 'OK' : 'FAIL'}]</span></div>`;
+
+                detailsHtml += '</div>';
+                auditDetails.innerHTML = detailsHtml;
+
+                if (result.passed) {
+                    auditStatus.textContent = 'PASSED';
+                    auditStatus.className = 'badge bg-success';
+                    goButton.disabled = false;
+                } else {
+                    auditStatus.textContent = 'FAILED';
+                    auditStatus.className = 'badge bg-danger';
+                    goButton.disabled = true;
+                    addAIMessage(`Warning: System resources insufficient for selected stack.`, 'ai');
+                }
+
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Installation Logic
+        document.getElementById('goButton').addEventListener('click', async () => {
+            if (state.selectedModules.length === 0) {
+                alert('SELECT_TARGETS_FIRST');
+                return;
+            }
+
+            document.getElementById('goButtonText').textContent = 'EXECUTING_INSTALLATION...';
             document.getElementById('goButtonSpinner').style.display = 'inline-block';
             document.getElementById('goButton').disabled = true;
 
-            addAIMessage(`Starting installation of ${state.selectedModules.length} modules: ${state.selectedModules.join(', ')}`, 'ai');
-
-            await runInstallations();
-
-            document.getElementById('goButtonText').textContent = 'Installation Complete';
-            document.getElementById('goButtonSpinner').style.display = 'none';
-        });
-
-        // Run installations sequentially
-        async function runInstallations() {
             const progressSection = document.getElementById('progressSection');
-            progressSection.innerHTML = '<h4>Installation Progress</h4>';
-            
-            // Create UI elements for all selected modules first
+            progressSection.innerHTML = '<h5 class="border-bottom border-secondary pb-2 mb-3">TASK_QUEUE</h5>';
+
+            // Create UI elements
             for (const module of state.selectedModules) {
-                 createModuleUI(module);
+                createModuleUI(module);
             }
 
             try {
@@ -279,9 +468,7 @@
                     body: JSON.stringify({ modules: state.selectedModules })
                 });
 
-                if (!response.ok) {
-                    throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-                }
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder();
@@ -290,237 +477,100 @@
                 while (true) {
                     const { done, value } = await reader.read();
                     if (done) break;
-                    
+
                     buffer += decoder.decode(value, { stream: true });
                     const lines = buffer.split('\n');
-                    
-                    // Process all complete lines
-                    buffer = lines.pop(); // Keep the last incomplete line
-                    
+                    buffer = lines.pop();
+
                     for (const line of lines) {
                         if (!line.trim()) continue;
                         try {
                             const event = JSON.parse(line);
                             handleServerEvent(event);
-                        } catch (e) {
-                            console.error('Failed to parse event:', line);
-                            term.writeln(`Error parsing server event: ${e.message}`);
-                        }
+                        } catch (e) { }
                     }
                 }
-                
-                addAIMessage('All installations completed! You can now deploy your application.', 'ai');
+
+                document.getElementById('goButtonText').textContent = 'PROCESS_COMPLETE';
+                document.getElementById('goButtonSpinner').style.display = 'none';
 
             } catch (error) {
-                term.writeln(`Communication Error: ${error.message}`);
-                addAIMessage(`Communication error: ${error.message}`, 'ai');
+                term.writeln(`\x1b[31m[FATAL] ${error.message}\x1b[0m`);
+                document.getElementById('goButtonText').textContent = 'PROCESS_FAILED';
             }
-        }
+        });
 
-        // Create UI for a module
         function createModuleUI(moduleName) {
             const progressSection = document.getElementById('progressSection');
-            const moduleDiv = document.createElement('div');
-            moduleDiv.className = 'module-group';
-            moduleDiv.id = `module-${moduleName}`;
-            moduleDiv.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6>${formatModuleName(moduleName)}</h6>
-                    <span class="status-badge badge bg-secondary">Pending...</span>
+            const div = document.createElement('div');
+            div.id = `module-${moduleName}`;
+            div.className = 'mb-3 pb-3 border-bottom border-secondary';
+            div.innerHTML = `
+                <div class="d-flex justify-content-between">
+                    <span class="fw-bold text-accent-blue">${moduleName.toUpperCase()}</span>
+                    <span class="status-badge badge bg-secondary">QUEUED</span>
                 </div>
-                <div class="progress mt-2">
-                    <div class="progress-bar progress-bar-striped" role="progressbar" style="width: 0%"></div>
+                <div class="progress my-2" style="height: 5px; background: #333;">
+                    <div class="progress-bar bg-success" style="width: 0%"></div>
                 </div>
-                <button class="btn btn-sm btn-link mt-2" onclick="toggleLogs('${moduleName}')">Show Details</button>
-                <div class="log-details" id="logs-${moduleName}"></div>
+                <div class="log-preview small text-muted font-monospace text-truncate">Waiting for scheduler...</div>
             `;
-            progressSection.appendChild(moduleDiv);
+            progressSection.appendChild(div);
         }
 
-        // Handle server events
         function handleServerEvent(event) {
             if (event.type === 'module_start') {
-                const moduleName = event.module;
-                const moduleDiv = document.getElementById(`module-${moduleName}`);
-                const badge = moduleDiv.querySelector('.status-badge');
-                const progressBar = moduleDiv.querySelector('.progress-bar');
-                
-                badge.className = 'status-badge badge bg-warning';
-                badge.textContent = 'Installing...';
-                progressBar.classList.add('progress-bar-animated');
-                
-                term.writeln(`\n=== Installing ${formatModuleName(moduleName)} ===`);
-                
-            } else if (event.type === 'progress') {
-                const moduleName = event.module;
+                const el = document.getElementById(`module-${event.module}`);
+                el.querySelector('.status-badge').className = 'status-badge badge bg-warning text-dark';
+                el.querySelector('.status-badge').textContent = 'RUNNING';
+                term.writeln(`\n\x1b[33m>>> STARTING MODULE: ${event.module}\x1b[0m`);
+            }
+            else if (event.type === 'progress') {
+                const el = document.getElementById(`module-${event.module}`);
                 const data = event.data;
-                const moduleDiv = document.getElementById(`module-${moduleName}`);
-                const progressBar = moduleDiv.querySelector('.progress-bar');
-                const logsDiv = document.getElementById(`logs-${moduleName}`);
-                
-                // Update progress bar
-                if (data.progress > 0) {
-                    progressBar.style.width = `${data.progress}%`;
-                }
-                
-                // Add logs
+
+                if (data.progress) el.querySelector('.progress-bar').style.width = `${data.progress}%`;
                 if (data.logs) {
-                    const logEntry = `[${new Date().toLocaleTimeString()}] ${data.logs}`;
-                    logsDiv.innerHTML += `${logEntry}\n`;
-                    logsDiv.scrollTop = logsDiv.scrollHeight;
-                    term.writeln(`  ${data.logs}`);
+                    el.querySelector('.log-preview').textContent = `> ${data.logs}`;
+                    term.writeln(`[${event.module}] ${data.logs}`);
                 }
-                
-                // Update specific message if provided
-                if (data.message) {
-                     // Could update a status text here
-                }
-                
-                // Handle final status for this module
-                if (data.status === 'success' || data.status === 'error') {
-                    const badge = moduleDiv.querySelector('.status-badge');
-                    
-                    if (data.status === 'success') {
-                        badge.className = 'status-badge badge bg-success';
-                        badge.textContent = 'Success';
-                        progressBar.classList.remove('progress-bar-animated');
-                        progressBar.style.width = '100%';
-                        term.writeln(`✓ ${formatModuleName(moduleName)} installed successfully`);
-                        addAIMessage(`${formatModuleName(moduleName)} installed successfully!`, 'ai');
-                    } else {
-                        badge.className = 'status-badge badge bg-danger';
-                        badge.textContent = 'Failed';
-                        progressBar.classList.remove('progress-bar-animated');
-                        term.writeln(`✗ ${formatModuleName(moduleName)} installation failed: ${data.message}`);
-                        addAIMessage(`Installation failed for ${formatModuleName(moduleName)}. Error: ${data.message}`, 'ai');
-                    }
+
+                if (data.status === 'success') {
+                    el.querySelector('.status-badge').className = 'status-badge badge bg-success';
+                    el.querySelector('.status-badge').textContent = 'DONE';
+                    term.writeln(`\x1b[32m[${event.module}] COMPLETED\x1b[0m`);
+                } else if (data.status === 'error') {
+                    el.querySelector('.status-badge').className = 'status-badge badge bg-danger';
+                    el.querySelector('.status-badge').textContent = 'ERROR';
+                    term.writeln(`\x1b[31m[${event.module}] FAILED: ${data.message}\x1b[0m`);
                 }
             }
         }
 
-        // Toggle log details
-        function toggleLogs(moduleName) {
-            const logsDiv = document.getElementById(`logs-${moduleName}`);
-            const button = event.target;
-            
-            if (logsDiv.style.display === 'none' || !logsDiv.style.display) {
-                logsDiv.style.display = 'block';
-                button.textContent = 'Hide Details';
-            } else {
-                logsDiv.style.display = 'none';
-                button.textContent = 'Show Details';
-            }
-        }
-
-        // App deployment
-        document.getElementById('deployButton').addEventListener('click', async () => {
-            const repoUrl = document.getElementById('repoUrl').value.trim();
-            
-            if (!repoUrl) {
-                alert('Please enter a repository URL');
-                return;
-            }
-
-            const deployProgress = document.getElementById('deployProgress');
-            deployProgress.innerHTML = '<div class="alert alert-info">Analyzing repository...</div>';
-            
-            term.writeln(`\n=== Deploying Application ===`);
-            term.writeln(`Repository: ${repoUrl}`);
-            
-            addAIMessage(`Analyzing repository ${repoUrl}. I'll determine the best deployment method based on installed libraries.`, 'ai');
-            
-            // Simulate AI decision making
-            await new Promise(resolve => setTimeout(resolve, 2000));
-            
-            const hasDocker = state.selectedModules.includes('docker');
-            const deployMethod = hasDocker ? 'Docker' : 'Script-based';
-            
-            addAIMessage(`Based on installed libraries, I recommend ${deployMethod} deployment. Proceeding...`, 'ai');
-            
-            deployProgress.innerHTML = `
-                <div class="alert alert-success">
-                    Deployment method: ${deployMethod}<br>
-                    Status: In progress...
-                </div>
-            `;
-            
-            term.writeln(`Deployment method: ${deployMethod}`);
-            term.writeln('Cloning repository...');
-            
-            // Simulate deployment
-            await new Promise(resolve => setTimeout(resolve, 3000));
-            
-            deployProgress.innerHTML = `
-                <div class="alert alert-success">
-                    ✓ Application deployed successfully!<br>
-                    Method: ${deployMethod}
-                </div>
-            `;
-            
-            term.writeln('✓ Application deployed successfully');
-            addAIMessage('Application deployed successfully! Your VM is ready to use.', 'ai');
-        });
-
-        // AI Chat
+        // Chat
         document.getElementById('sendChatButton').addEventListener('click', () => {
             const input = document.getElementById('chatInput');
-            const message = input.value.trim();
-            
-            if (message) {
-                addAIMessage(message, 'user');
+            const msg = input.value.trim();
+            if (msg) {
+                addAIMessage(msg, 'user');
                 input.value = '';
-                
-                // Simulate AI response
-                setTimeout(() => {
-                    const response = generateAIResponse(message);
-                    addAIMessage(response, 'ai');
-                }, 500);
+                setTimeout(() => addAIMessage('Command received. AI processing...', 'ai'), 500);
             }
         });
 
-        // Add message to chat
         function addAIMessage(text, sender) {
-            const chatMessages = document.getElementById('chatMessages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message chat-${sender}`;
-            messageDiv.textContent = text;
-            chatMessages.appendChild(messageDiv);
-            chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            state.aiContext.push({ sender, text, timestamp: Date.now() });
+            const container = document.getElementById('chatMessages');
+            const div = document.createElement('div');
+            div.className = `chat-message chat-${sender}`;
+            div.textContent = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
         }
 
-        // Generate AI response (simplified)
-        function generateAIResponse(message) {
-            const lowerMessage = message.toLowerCase();
-            
-            if (lowerMessage.includes('error') || lowerMessage.includes('fail')) {
-                return 'I see you\'re experiencing an issue. Can you provide more details about the error? Check the terminal logs for specific error messages.';
-            } else if (lowerMessage.includes('docker')) {
-                return 'Docker is a containerization platform. Make sure it\'s selected in the Backend Libraries section before installation.';
-            } else if (lowerMessage.includes('help')) {
-                return 'I can help you with:\n- Module selection and installation\n- Troubleshooting errors\n- Application deployment\n- General VM setup questions';
-            } else {
-                return 'I\'m monitoring your installation progress. Feel free to ask any questions about the setup process!';
-            }
-        }
-
-        // Terminal interactive mode
-        document.getElementById('terminalInteractive').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                term.writeln('\n[Interactive mode enabled - Feature in development]');
-                addAIMessage('Interactive terminal mode is currently in development. You can view logs in read-only mode.', 'ai');
-            } else {
-                term.writeln('\n[Interactive mode disabled]');
-            }
-        });
-
-        // Check if already logged in
+        // Auto login check
         if (localStorage.getItem('pdeploy_user')) {
-            document.getElementById('loginScreen').style.display = 'none';
-            document.getElementById('dashboard').style.display = 'block';
-            initDashboard();
+            document.getElementById('username').value = localStorage.getItem('pdeploy_user');
+            document.getElementById('loginForm').dispatchEvent(new Event('submit'));
         }
     </script>
 </body>
-</html>
